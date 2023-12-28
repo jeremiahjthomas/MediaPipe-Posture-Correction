@@ -38,8 +38,7 @@ def calculate_distance(a, b):
 #The code below chooses the correct source
 cap = cv2.VideoCapture(0)
 try:
-    frameTest = cap.read()[1]
-    imageTest = cv2.cvtColor(frameTest, cv2.COLOR_BGR2RGB)
+    imageTest = cv2.cvtColor(cap.read()[1], cv2.COLOR_BGR2RGB)
 except:
     cap = cv2.VideoCapture(1)
 
@@ -59,19 +58,19 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         frame_counter+=1
 
         # Detect pose and render
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) #recolor image from bgr to rgb because open cv is default bgr 
-        image.flags.writeable = False #saving memory
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) #recolor frame from bgr to rgb because open cv is default bgr 
+        frame.flags.writeable = False #saving memory
         
         # Making detection
-        results = pose.process(image) #array
+        results = pose.process(frame) #array
         try:
-            results2 = mp_face_mesh.FaceMesh(refine_landmarks=True).process(image)
+            results2 = mp_face_mesh.FaceMesh(refine_landmarks=True).process(frame)
         except:
             results2 = None
 
         # Recolor 
-        image.flags.writeable = True
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        frame.flags.writeable = True
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
         #get landmark coordinates
         try:
@@ -114,25 +113,25 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         
         #output marker text
         color1 = (255, 255, 255) if 174 < trunkAngle < 180 else (0, 0, 255)
-        cv2.putText(image, f"Trunk Angle: {str(trunkAngle)}", (70,60), cv2.FONT_HERSHEY_SIMPLEX, 1, color1, 2, cv2.LINE_AA)
+        cv2.putText(frame, f"Trunk Angle: {str(trunkAngle)}", (70,60), cv2.FONT_HERSHEY_SIMPLEX, 1, color1, 2, cv2.LINE_AA)
 
         color2 = (255, 255, 255) if headAngle > 10 else (0, 0, 255)
-        cv2.putText(image, f"Head Angle: {str(headAngle)}", (70,100), cv2.FONT_HERSHEY_SIMPLEX, 1,color2, 2, cv2.LINE_AA)
+        cv2.putText(frame, f"Head Angle: {str(headAngle)}", (70,100), cv2.FONT_HERSHEY_SIMPLEX, 1,color2, 2, cv2.LINE_AA)
         
         color3 = (255, 255, 255) if calculate_distance(chin, centerShoulder)*100 > 13 else (0, 0, 255)
-        cv2.putText(image, f"Relaxed Shoulders: {str(calculate_distance(chin, centerShoulder)*100)}%",
+        cv2.putText(frame, f"Relaxed Shoulders: {str(calculate_distance(chin, centerShoulder)*100)}%",
                             (70,140), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color3, 2, cv2.LINE_AA)
         color4 = (255, 255, 255) if 150 < straightness < 180  else (0, 0, 255)
-        cv2.putText(image, f"Straightness: {str(straightness)}", (70,180), cv2.FONT_HERSHEY_SIMPLEX, 1, color1, 2, cv2.LINE_AA)
+        cv2.putText(frame, f"Straightness: {str(straightness)}", (70,180), cv2.FONT_HERSHEY_SIMPLEX, 1, color1, 2, cv2.LINE_AA)
 
         #draw landmarks
-        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS, 
+        mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS, 
                                 mp_drawing.DrawingSpec(color=(245,117,60), thickness=2, circle_radius=2),
                                 mp_drawing.DrawingSpec(color=(245,66,230), thickness=2, circle_radius=2)
                                 )
 
-        #show image
-        cv2.imshow('Looks', image)
+        #show frame
+        cv2.imshow('Looks', frame)
 
         #quit on q-key press
         if cv2.waitKey(10) & 0xFF == ord('q'):
@@ -140,7 +139,6 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
         #avoid memory loss/leakage
         del frame 
-        del image
 
 #avoid memory loss/leakage and check crash speed
 cap.release()
